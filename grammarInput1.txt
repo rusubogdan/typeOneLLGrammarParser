@@ -1,0 +1,10 @@
+SAB
+abc
+1
+aABb
+2
+aAc
+9
+2
+bB
+c

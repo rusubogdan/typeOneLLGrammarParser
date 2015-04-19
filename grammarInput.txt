@@ -1,0 +1,10 @@
+Grammar non terminals:
+S A B
+Grammar terminals:
+a b c
+Grammar substitutions:
+S -> aABb
+A -> aAc
+A -> 9
+B -> bB
+B -> c
