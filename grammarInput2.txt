@@ -1,10 +1,8 @@
 Grammar non terminals:
-S A B
+S F
 Grammar terminals:
-a b c
+( + ) a
 Grammar substitutions:
-S -> aABb
-A -> aAc
-A -> @
-B -> bB
-B -> c
+S -> F
+S -> (S+F)
+F -> a

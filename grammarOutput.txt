@@ -1,0 +1,12 @@
+S -> (S+F)
+(
+S -> F
+F -> a
+(a
+(a+
+F -> a
+(a+a
+(a+a)
+(a+a)$
+
+Input accepted

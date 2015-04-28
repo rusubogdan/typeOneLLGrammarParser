@@ -7,6 +7,7 @@ public class Resolver {
 
     private FileInputStream inputStream = null;
     private FileOutputStream outputStream = null;
+    private PrintWriter printWriter = null;
     private Grammar cfGrammar;
     private ParsingMatrix parsingMatrix;
     private Map<String, String> firstSet;
@@ -24,7 +25,7 @@ public class Resolver {
 
     public void readGrammar() {
         try {
-            inputStream = new FileInputStream("grammarInput.txt");
+            inputStream = new FileInputStream("grammarInput2.txt");
             BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 
             br.readLine(); // skip the first line of the input file
@@ -102,7 +103,7 @@ public class Resolver {
                     && (productions.get(k) != null || (Character) firstSet.get(nonTerminal).charAt(k) != null)) {
                 // if prod k && first(NT)(k)
                 if (productions.get(k) != null && (Character) firstSet.get(nonTerminal).charAt(k) != null
-                        && firstSet.get(nonTerminal).charAt(k) != '9') {
+                        && firstSet.get(nonTerminal).charAt(k) != '@') {
                     // NT -> first(NT)(k): prod k
                     Map<String, String> myMap = new HashMap<String, String>();
                     myMap.put(String.valueOf(firstSet.get(nonTerminal).charAt(k)), productions.get(k));
@@ -114,12 +115,12 @@ public class Resolver {
                 } else
 
                     // if prod k && prod k == eps
-                    if (productions.get(k) != null && productions.get(k).equals("9")) {
+                    if (productions.get(k) != null && productions.get(k).equals("@")) {
                         // for i follow NT
                         for (String character : followSet.get(nonTerminal).split("")) {
                             // NT -> follow(NT)(i) : eps
                             Map<String, String> myMap = new HashMap<String, String>();
-                            myMap.put(character, "9");
+                            myMap.put(character, "@");
                             nonTerminalList.add(myMap);
 
                             k++;
@@ -153,6 +154,28 @@ public class Resolver {
         }
     }
 
+    private void writeOnOutput(String message) {
+        PrintWriter printWriter = new PrintWriter(outputStream);
+
+        printWriter.print(message);
+        printWriter.flush();
+
+    }
+
+    private String extractTerminalsSequence(String sequence) {
+        String seq = "";
+
+        for (String s : sequence.split("")) {
+            if ((Character) s.charAt(0) >= (Character) "a".charAt(0) && (Character) s.charAt(0) <= (Character) "z".charAt(0)) {
+                seq += s;
+            } else {
+                return seq;
+            }
+        }
+
+        return seq;
+    }
+
     private Boolean acceptWord() {
         List<String> inputWordArray = Arrays.asList(inputWord.split(""));
         Collections.reverse(inputWordArray);
@@ -160,23 +183,52 @@ public class Resolver {
 
         Stack<String> grammarStack = new Stack();
         grammarStack.push("$");
-        grammarStack.push("S");
+        grammarStack.push(cfGrammar.getNonTerminals().get(0)); // S
+
+        String outputMessage = /*cfGrammar.getNonTerminals().get(0) + "\n"*/ "";
+
+        outputMessage += ""/*cfGrammar.getNonTerminals().get(0) +
+                " -> " + cfGrammar.getProductionsOfNonTerminal(cfGrammar.getNonTerminals().get(0)).get(0) + "\n"*/
+//                                        + cfGrammar.getProductionsOfNonTerminal("S") + "\n";
+        ;
+        String intermediaryOutput = ""; // abABca - > ab
+        String remainingProductionOutput = intermediaryOutput; // abABs -> ABca
+        intermediaryOutput += /*extractTerminalsSequence(
+                cfGrammar.getProductionsOfNonTerminal(cfGrammar.getNonTerminals().get(0))
+                        .get(0))*/"";
+
+        try {
+            outputStream = new FileOutputStream("grammarOutput.txt");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        printWriter = new PrintWriter(outputStream);
 
         for (String letter : inputWordArray) {
             inputStack.push(letter);
         }
 
         do {
+
             String grammarTopElement = grammarStack.pop();
             String inputTopElement = inputStack.pop();
 
-            if (grammarTopElement.equals("9")) {
+            if (grammarTopElement.equals("@")) {
+//                intermediaryOutput += "@";
+
                 // if is epsilon, skip
                 inputStack.push(inputTopElement);
                 continue;
             }
 
             if (grammarTopElement.equals(inputTopElement)) {
+                intermediaryOutput += inputTopElement;
+
+//                intermediaryOutput += remainingProductionOutput;
+
+                outputMessage += intermediaryOutput;
+                outputMessage += '\n';
                 continue;
             }
 
@@ -189,24 +241,51 @@ public class Resolver {
 
                     if (production != null) {
                         List<String> productionCharacters = Arrays.asList(production.split(""));
+
+//                        remainingProductionOutput = "";
+
+//                        for (String character : productionCharacters) {
+////                            outputMessage += character;
+//                            remainingProductionOutput += character;
+//                        }
+
+
+
                         Collections.reverse(productionCharacters);
 
+                        outputMessage += grammarTopElement + " -> ";
+
                         for (String character : productionCharacters) {
+//                            outputMessage += character;
                             grammarStack.push(character);
                         }
+
+                        outputMessage += production;
+
+                        outputMessage += '\n';
+
+//                        outputMessage += remainingProductionOutput + '\n';
+
+//                        intermediaryOutput += extractTerminalsSequence(production);
+//                        outputMessage += intermediaryOutput;
+//                        outputMessage += '\n';
                     }
                 } else {
+                    writeOnOutput("The word " + inputWord + " is not accepted by the grammar");
+
                     return false;
                 }
-            } else /*if (inputTopElement.equals("$") && grammarTopElement.equals("$")) {
-                return true;
-            } else */{
+            } else {
+                writeOnOutput("The word " + inputWord + " is not accepted by the grammar");
+
                 return false;
             }
-
-
         } while (!grammarStack.empty());
 
+        outputMessage += '\n';
+        outputMessage += "Input accepted";
+
+        writeOnOutput(outputMessage);
 
         return true;
     }
@@ -223,8 +302,24 @@ public class Resolver {
         return null;
     }
 
+    public String getUnusedSymbol() {
+        String unusedSymbol = "A";
+
+        while (cfGrammar.getNonTerminals().contains(unusedSymbol)) {
+            unusedSymbol += 1;
+        }
+
+        return unusedSymbol;
+    }
+
+    public void removeEpsilonDerivations() {
+        cfGrammar.getSubstitutions();
+    }
+
     public Boolean resolve() {
         readGrammar();
+
+
         createFirstAndFollowSets();
         createParsingMatrix();
         readInput();

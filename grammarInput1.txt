@@ -1,10 +1,9 @@
-SAB
-abc
-1
-aABb
-2
-aAc
-9
-2
-bB
-c
+Grammar non terminals:
+A S C
+Grammar terminals:
+c d
+Grammar substitutions:
+A -> SS
+S -> CC
+C -> cC
+C -> d

@@ -6,5 +6,7 @@ class Main {
         Resolver resolver = new Resolver();
         boolean accepted = resolver.resolve();
 
+        System.out.println(accepted);
+
     }
 }

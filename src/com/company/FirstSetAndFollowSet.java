@@ -18,12 +18,12 @@ public class FirstSetAndFollowSet {
         first = new String[nonTerminalsLength];
 
         for (int i = 0; i < nonTerminalsLength; i++)
-            first[i] = removeDuplicates(first1(i));
+            first[i] = removeDuplicates(first(i));
 
         follow = new String[nonTerminalsLength];
 
         for (int i = 0; i < nonTerminalsLength; i++)
-            follow[i] = removeDuplicates(follow1(i));
+            follow[i] = removeDuplicates(follow(i));
 
         Map map = new HashMap();
 
@@ -49,37 +49,40 @@ public class FirstSetAndFollowSet {
         return map;
     }
 
-    private String first1(int i) {
+    private String first(int i) {
         boolean found;
         String temp = "";
         String str = "";
 
         String currentNonTerminal = cfGrammar.getNonTerminals().get(i);
 
-        // nr of productions/substitutions
+        // for every productions of nonTerminal
         for (int j = 0; j < cfGrammar.getProductionsOfNonTerminal(currentNonTerminal).size(); j++) {
-            // when non terminal has epsilon production
-
             String productionRule = cfGrammar
                     .getProductionsOfNonTerminal(currentNonTerminal).get(j);
 
             for (int k = 0; k < productionRule.length(); k++) {
+                // if a nonTerminal is found in the production rule, resolve first set for it
                 found = false;
-                // finding non terminal
+                // for every terminal in the nonTerminal list
                 for (int l = 0; l < cfGrammar.getNonTerminals().size(); l++) {
-                    // for non terminal in first set
+                    // if current production contains a nonTerminal, resolve first of that nonTerminal
                     if (productionRule.charAt(k) == cfGrammar.getNonTerminals().get(l).charAt(0)) {
-                        str = first1(l);
-                        // when epsilon production is the only non terminal production
-                        if (!(str.length() == 1 && str.charAt(0) == '9')) {
+                        //  X → Y1Y2..Yk then add first(Y1Y2..Yk) to first(X)
+                        str = first(l);
+                        // when epsilon production is the only nonTerminal production
+                        // If X -> eps is a production, then add eps to FIRST(X)
+                        if (!(str.length() == 1 && str.charAt(0) == '@')) {
                             temp = temp + str;
                         }
+
                         found = true;
                         break;
                     }
                 }
                 if (found) {
-                    if (str.contains("9")) {
+                    // if eps is found in the production add the next nonTerminal 's first set to current first set
+                    if (str.contains("@")) {
                         continue;
                     }
                 } else {
@@ -92,41 +95,47 @@ public class FirstSetAndFollowSet {
         return temp;
     }
 
-    private String follow1(int i) {
-        char pro[], chr[];
+    private String follow(int i) {
+        char production[], chr[];
         String temp = "";
         boolean found = false;
+        // first production need to have a "$" symbol at th end
         if (i == 0) {
             temp = "$";
         }
 
+        // for every nonTerminals
         for (int j = 0; j < cfGrammar.getNonTerminals().size(); j++) {
             String currentNonTerminal = cfGrammar.getNonTerminals().get(j);
             List<String> currentProductions = cfGrammar
                     .getProductionsOfNonTerminal(currentNonTerminal);
+            // for every productions of the nonTerminal
             for (int k = 0; k < currentProductions.size(); k++) {
                 String currentProduction = currentProductions.get(k);
-                pro = currentProduction.toCharArray();
+                production = currentProduction.toCharArray();
 
-                for (int l = 0; l < pro.length; l++) {
+                // for every character in production
+                for (int l = 0; l < production.length; l++) {
 
-                    if (pro[l] == cfGrammar.getNonTerminals().get(i).charAt(0)) {
+                    if (production[l] == cfGrammar.getNonTerminals().get(i).charAt(0)) {
 
-                        if (l == pro.length - 1) {
+                        // add the last terminal to follow set
+                        if (l == production.length - 1) {
                             if (j < i) {
                                 temp = temp + follow[j];
                             }
                         } else {
+                            // for every nonTerminals
                             for (int m = 0; m < cfGrammar.getNonTerminals().size(); m++) {
 
-                                if (pro[l + 1] == cfGrammar.getNonTerminals().get(m).charAt(0)) {
+                                if (production[l + 1] == cfGrammar.getNonTerminals().get(m).charAt(0)) {
                                     chr = first[m].toCharArray();
                                     for (int n = 0; n < chr.length; n++) {
-                                        if (chr[n] == '9') {
-                                            if (l + 1 == pro.length - 1) {
-                                                temp = temp + follow1(j);
+                                        if (chr[n] == '@') {
+                                            if (l + 1 == production.length - 1) {
+                                                temp = temp + follow(j);
                                             } else {
-                                                temp = temp + follow1(m);
+                                                temp = temp + follow(m);
                                             }
                                         } else {
                                             temp = temp + chr[n];
@@ -136,7 +145,7 @@ public class FirstSetAndFollowSet {
                                 }
                             }
                             if (!found) {
-                                temp = temp + pro[l + 1];
+                                temp = temp + production[l + 1];
                             }
                         }
                     }
